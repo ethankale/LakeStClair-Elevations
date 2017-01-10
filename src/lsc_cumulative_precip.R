@@ -96,14 +96,6 @@ while (i < nrow(combinations)) {
 
 close(pb)
 
-# Plots of the P values for every value of first the short 
-#   part, then the long part
-par(mfrow = c(2,1),
-    mai = rep(1, 4))
-plot(combinations$short, log(combinations$short.p))
-plot(combinations$long, log(combinations$long.p))
-dev.off()
-
 # Plots of Adjusted R Squared vs. short & long vals
 ggplot(combinations,
        aes(x = long, 
@@ -118,25 +110,44 @@ ggplot(combinations,
        y = "Adjusted R Squared") +
   theme_classic()
 
-ggplot(combinations,
-       aes(x = short, 
-           y = r.squared,
-           color = long)) + 
-  geom_line(aes(group = long)) + 
-  geom_point(aes(group = long)) + 
-  guides(color = guide_legend(title = "Long (# days)")) +
-  labs(title = "Correlation of Lake St. Clair Elevation and Cumulative Precip",
-       subtitle = "Cumulative precipitation, divided into short and long parts",
-       x = "Short (number of days)",
-       y = "Adjusted R Squared") +
-  theme_classic()
+ggsave(file = "./results/elevation_correlation_rsquared.png",
+       width = 7,
+       height = 4)
 
-# Combined contour plot of r squared vs. short & long values
+# Combined image plot of r squared vs. short & long values
+combos.long <- combinations %>%
+  mutate(`P (long series, log)` = log(long.p),
+         `P (short series, log)` = log(short.p)) %>%
+  select(short, long, `P (long series, log)`, `P (short series, log)`) %>%
+  gather(stat, value, -short, -long)
+
+
+ggplot(combos.long,
+       aes(x = short,
+           y = long)) +
+  geom_raster(aes(fill = value)) + 
+  facet_grid(.~stat) +
+  labs(title = "P Values",
+       x = "Short (days of cumulative precipitation)",
+       y = "Long (days of cumulative precipitation)") +
+  guides(fill = guide_colorbar(title = "Log of P-Stat")) +
+  theme_minimal()
+
+ggsave(file = "./results/elevation_correlation_pstats.png",
+       width = 7,
+       height = 4)
+
+# Image plot of R squared statistic
 ggplot(combinations,
        aes(x = short,
            y = long)) +
-  geom_raster(aes(fill = log(long.p))) + 
-  theme_classic()
+  geom_raster(aes(fill = r.squared)) + 
+  labs(title = "Variation Explained",
+       subtitle = "Higher values (lighter blue) are better",
+       x = "Short (days of cumulative precipitation)",
+       y = "Long (days of cumulative precipitation)") +
+  guides(fill = guide_colorbar(title = "R Squared")) +
+  theme_minimal()
 
 # Look at the best fit
 m <- which.max(combinations$r.squared)
@@ -155,8 +166,29 @@ data.current.lm <- with(data.current, lm(elevation ~ short + long))
 summary(data.current.lm)
 
 data.current$elev.pred <- predict(data.current.lm, data.current)
-plot(data.current$days, data.current$elevation, type = "l")
-points(data.current$days, data.current$elev.pred, col = "red", type = "l")
-points(data.current$days, data.current$elev.pred, col = "red", pch = 19)
+data.current.long <- data.current %>%
+  select(days, elevation, elev.pred) %>%
+  gather(type, elevation, -days)
+
+ggplot(data.current.long, aes(x = days, 
+                              y = elevation,
+                              color = type)) +
+  geom_line(aes(group = type,
+                linetype = type),
+            size = 1) + 
+  scale_color_manual(labels = c("Predicted", "Actual"),
+                     values = c("red", "black")) +
+  scale_linetype_manual(labels = c("Predicted", "Actual"),
+                        values = c("dashed", "solid"),
+                        guide = FALSE) +
+  guides(color = guide_legend(title = "Elevation")) +
+  labs(title = "Lake St. Clair Elevations",
+       x = "Date",
+       y = "Elevation (feet above mean sea level)") +
+  theme_classic()
+
+ggsave("./results/elevation_correlation_predict.png",
+       width = 7,
+       height = 4)
 
 
