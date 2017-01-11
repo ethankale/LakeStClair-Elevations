@@ -3,10 +3,7 @@
 #   daily Lake St. Clair elevations and adjusted
 #   10u rainfall records
 
-ImportStClairData <- function() {
-  
-  data.raw <- read_csv("./data/Lake StClair Daily.csv",
-                       col_types = "cd")
+ImportStClairPrecip <- function() {
   noaa.raw <- read_csv("./data/11u_1988-2016_Day.csv",
                        col_types = "cccd")
   # PEA1 is the early site id for what is now Eaton Creek - 10u
@@ -51,13 +48,10 @@ ImportStClairData <- function() {
   
   # Give NOAA and lake elevation date fields
   noaa.raw$days <- as.Date(noaa.raw$DATE, format = "%Y%m%d")
-  data.raw$days <- as.Date(data.raw$Date, format = "%m/%d/%y")
   
-  # Join the data
-  data.join <- eaton.raw %>%
-    left_join(noaa.raw) %>%
-    left_join(data.raw) %>%
-    select(days, max.flag, total.precip, PRCP, elevation)
+  data.join <- noaa.raw %>%
+    left_join(eaton.raw) %>%
+    select(days, max.flag, total.precip, PRCP)
   
   # Build the relationship between precip records
   data.join.lm <- with(data.join, lm(total.precip ~ PRCP))
@@ -73,4 +67,45 @@ ImportStClairData <- function() {
   return(data.join)
   
 }
+
+ImportStClairData <- function(period) {
   
+  data.precip <- ImportStClairPrecip()
+  
+  if (period == "day") {
+    data.raw <- read_csv("./data/Lake StClair Daily.csv",
+                         col_types = "cd")
+    
+    data.elev <- data.raw %>%
+      mutate(days = as.Date(Date, format = "%m/%d/%y"))
+
+  } else if (period == "month") {
+    data.raw <- read_csv("./data/Lake StClair 1988-2016.csv")
+    
+    data.elev <- data.raw %>%
+      mutate(days = as.Date(paste0(`Mon Year`, "28"), format = "%b %Y%d"),
+             elevation = Average) %>%
+      filter(Flag == FALSE)
+  }
+
+  # Join the data
+  data.join <- data.precip %>%
+    left_join(data.elev) %>%
+    mutate(measure.mon = as.yearmon(days)) %>%
+    select(days, max.flag, measure.mon,
+           total.precip, PRCP, precip.merge, elevation)
+  
+  if (period == "month") {
+    data.join <- data.join %>%
+      group_by(measure.mon) %>%
+      summarize(PRCP = sum(PRCP), 
+                total.precip = sum(total.precip), 
+                precip.merge = sum(precip.merge), 
+                elevation = mean(elevation, na.rm = TRUE), 
+                max.flag = max(max.flag))
+  }
+  
+  return(data.join)
+}
+
+

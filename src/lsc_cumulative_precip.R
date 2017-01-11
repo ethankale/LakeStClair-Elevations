@@ -4,6 +4,7 @@
 
 library(readr)
 library(dplyr)
+library(tidyr)
 library(zoo)
 library(ggplot2)
 
@@ -41,13 +42,13 @@ TrimData <- function(df) {
 }
 
 source("./src/daily_merged_timeseries.R")
-data.join <- ImportStClairData()
+data.join <- ImportStClairDaily()
 
 # Sequences of days for short & long cumulative precip series.
 #   Short series goes by months
 #   Long series goes by quarters
-shorts <- seq(60, 274, by = 30)
-longs <- seq(365, 2557, by = 91)
+shorts <- seq(7, 35, by = 7)
+longs <- seq(400, 600, by = 20)
 
 # We see a peak in r squared around 1200, so we'll increase the 
 #   resolution right there to get a more accurate picture.
@@ -83,7 +84,8 @@ while (i < nrow(combinations)) {
   
   data.current <- TrimData(data.current)
 
-  data.current.lm <- with(data.current, lm(elevation ~ short + long))
+  data.current.lm <- with(data.current, 
+                          lm(elevation ~ short + long))
   
   combinations$short.p[i] <- summary(data.current.lm)$coefficients[2+9]
   combinations$long.p[i] <- summary(data.current.lm)$coefficients[3+9]
@@ -105,10 +107,11 @@ ggplot(combinations,
   geom_point(aes(group = short)) + 
   guides(color = guide_legend(title = "Short (# days)")) +
   labs(title = "Correlation of Lake St. Clair Elevation and Cumulative Precip",
-       subtitle = "Cumulative precipitation, divided into short and long parts",
+       subtitle = paste0("Linear regression of elevation vs. cumulative precipitation",
+                          " divided into short and long parts"),
        x = "Long (number of days)",
        y = "Adjusted R Squared") +
-  theme_classic()
+  theme_minimal()
 
 ggsave(file = "./results/elevation_correlation_rsquared.png",
        width = 7,
@@ -161,7 +164,8 @@ series <- CumSumWindow(data.current$precip.merge, short, long)
 data.current$short <- series$short
 data.current$long <- series$long
 data.current <- TrimData(data.current)
-data.current.lm <- with(data.current, lm(elevation ~ short + long))
+data.current.lm <- with(data.current, 
+                        lm(elevation ~ short + long))
 
 summary(data.current.lm)
 
@@ -185,10 +189,42 @@ ggplot(data.current.long, aes(x = days,
   labs(title = "Lake St. Clair Elevations",
        x = "Date",
        y = "Elevation (feet above mean sea level)") +
-  theme_classic()
+  theme_minimal()
 
 ggsave("./results/elevation_correlation_predict.png",
        width = 7,
        height = 4)
+
+# Aggregate all of the R values for a each value of long
+combos.long.ag <- combinations %>%
+  group_by(long) %>%
+  summarize(r2 = mean(r.squared),
+            p = mean(log(long.p)))
+
+plot(combos.long.ag$long, combos.long.ag$r2, type = "l")
+plot(combos.long.ag$long, combos.long.ag$p, type = "l")
+
+# Aggregate all of the R values for a each value of short
+combos.short.ag <- combinations %>%
+  group_by(short) %>%
+  summarize(r2 = mean(r.squared),
+            p = mean(log(short.p))) %>%
+  gather(stat, value, -short)
+
+ggplot(combos.short.ag, aes(x = short,
+                            y = value)) +
+  geom_line() +
+  facet_grid(stat ~ .,
+             scales = "free_y") +
+  labs(title = "Correlation Statistics",
+       subtitle = "R squared and p statistic for the short cumulative precipitation series",
+       x = "Days of cumulative precip",
+       y = "Correlation statistic value")
+
+ggsave("./results/elevation_correlation_short_stats.png",
+       width = 7,
+       height = 4)
+
+
 
 

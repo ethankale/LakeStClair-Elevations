@@ -35,3 +35,6 @@ vignettes/*.pdf
 # Output files
 *.png
 *.pdf
+
+# Office/Windows temp files
+~*
