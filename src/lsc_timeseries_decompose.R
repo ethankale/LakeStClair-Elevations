@@ -10,7 +10,7 @@ library(stlplus)
 library(ggplot2)
 
 s.window = "periodic"
-t.window = 12*2
+t.window = 12*5
 
 
 source("./src/daily_merged_timeseries.R")
@@ -126,7 +126,7 @@ png("./results/lsc_decompose_trend.png",
     pointsize = 20)
 plot(data.ts.stl$time, data.ts.stl$data$trend,
      type = "l",
-     main = "Lake St. Clair TS Decomposition Remainder")
+     main = "Lake St. Clair TS Decomposition Trend")
 dev.off()
 
 png("./results/eaton_decompose_trend.png",
@@ -135,6 +135,6 @@ png("./results/eaton_decompose_trend.png",
     pointsize = 20)
 plot(eaton.ts.stl$time, eaton.ts.stl$data$trend,
      type = "l",
-     main = "Eaton TS Decomposition Remainder")
+     main = "Eaton TS Decomposition Trend")
 dev.off()
 

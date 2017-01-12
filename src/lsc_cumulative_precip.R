@@ -42,7 +42,7 @@ TrimData <- function(df) {
 }
 
 source("./src/daily_merged_timeseries.R")
-data.join <- ImportStClairDaily()
+data.join <- ImportStClairData("day")
 
 # Sequences of days for short & long cumulative precip series.
 #   Short series goes by months

@@ -3,6 +3,11 @@
 #   daily Lake St. Clair elevations and adjusted
 #   10u rainfall records
 
+library(readr)
+library(dplyr)
+library(lubridate)
+library(zoo)
+
 ImportStClairPrecip <- function() {
   noaa.raw <- read_csv("./data/11u_1988-2016_Day.csv",
                        col_types = "cccd")
@@ -103,6 +108,9 @@ ImportStClairData <- function(period) {
                 precip.merge = sum(precip.merge), 
                 elevation = mean(elevation, na.rm = TRUE), 
                 max.flag = max(max.flag))
+  } else if (period == "day") {
+    data.join <- data.join %>%
+      mutate(year.decimal = decimal_date(days))
   }
   
   return(data.join)

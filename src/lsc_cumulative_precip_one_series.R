@@ -24,12 +24,12 @@ TrimData <- function(df) {
 }
 
 source("./src/daily_merged_timeseries.R")
-data.join <- ImportStClairData()
+data.join <- ImportStClairData("day")
 
-# Sequences of days for short & long cumulative precip series.
-#   Short series goes by months
-#   Long series goes by quarters
-combinations <- data.frame(num.days = seq(181, 2557, by = 91))
+# Total window for cumulative rainfall period
+num.years <- seq(0.1, 6.5, by = .1)
+combinations <- data.frame(num.years = num.years,
+                           num.days = as.integer(num.years * 365.25))
 
 combinations$p.log <- -1
 combinations$r.squared <- -1
@@ -70,14 +70,14 @@ while (i < nrow(combinations)) {
 close(pb)
 
 # Plot the number of days vs. the rsquared
-ggplot(combinations, aes(x = num.days,
+ggplot(combinations, aes(x = num.years,
                          y = r.squared)) +
   geom_line() +
   labs(title = "Lake St. Clair Elevation and Precipitation Correlation",
        subtitle = paste0("R squared is the correlation between cumulative ", 
                          "precipitation and lake level elevation, where 1.0 ",
-                         "= perfect prediction"),
-       x = "Days of cumulative precipitation",
+                         " = perfect prediction"),
+       x = "Years of cumulative precipitation",
        y = "R Squared") +
   theme_minimal()
 
