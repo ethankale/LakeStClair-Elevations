@@ -13,8 +13,8 @@ library(ggplot2)
 #   sampling from 2011-2014) and less-sampled windows (such as
 #   the weekly or so sampling from 2014-2016).
 TrimData <- function(df) {
-  df.out <- df[complete.cases(df), ]
-  df.out <- df.out %>% 
+  #df.out <- df[complete.cases(df), ]
+  df.out <- df %>% 
     mutate(years = year(days)) %>%
     group_by(years) %>%
     sample_n(25) %>%

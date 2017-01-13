@@ -47,8 +47,8 @@ data.join <- ImportStClairData("day")
 # Sequences of days for short & long cumulative precip series.
 #   Short series goes by months
 #   Long series goes by quarters
-shorts <- seq(7, 35, by = 7)
-longs <- seq(400, 600, by = 20)
+shorts <- seq(140, 160, by = 5)
+longs <- seq(1450, 1470, by = 5)
 
 # We see a peak in r squared around 1200, so we'll increase the 
 #   resolution right there to get a more accurate picture.

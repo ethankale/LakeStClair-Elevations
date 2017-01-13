@@ -1,5 +1,5 @@
 
-# Try to find short, medium, and long term cumulative rainfall
+# Try to find cumulative rainfall and intensity
 #   impacts on the elevation of Lake St. Clair
 
 library(readr)
@@ -35,7 +35,6 @@ while (i < nrow(combinations)) {
                        fill = NA)
 
   data.current$sum.precip <- series
-  #data.current <- data.current[complete.cases(data.current), ]
 
   data.current.lm <- with(data.current, 
                           lm(elevation ~ sum.precip))
@@ -44,8 +43,6 @@ while (i < nrow(combinations)) {
   combinations$r.squared[i] <- summary(data.current.lm)$adj.r.squared
   
   setTxtProgressBar(pb, i)
-  
-  #summary(data.current.lm)
 }
 
 close(pb)
@@ -69,8 +66,8 @@ ggsave(file = "./results/elevation_correlation_single_r2.png",
 
 # Recreate the regression from the best fit
 month1 <- 5
-month2 <- 12*4
-#best.fit <- combinations[month,]
+month2 <- 6 + 12*3
+month3 <- 12*8
 
 data.current <- data.join
 series1 <- rollapplyr(data.current$precip.merge, 
@@ -81,17 +78,23 @@ series2 <- rollapplyr(data.current$precip.merge,
                       width = month2, 
                       FUN = sum, 
                       fill = NA)
+series3 <- rollapplyr(data.current$precip.intensity, 
+                      width = month3, 
+                      FUN = sum, 
+                      fill = NA)
 data.current$sum.precip.1 <- series1
 data.current$sum.precip.2 <- series2
+data.current$sum.intensity <- series3
 data.current.lm <- with(data.current, 
-                        lm(elevation ~ sum.precip.1 + sum.precip.2))
+#                        lm(elevation ~ sum.precip.1 + sum.precip.2))
+                        lm(elevation ~ sum.precip.1 + sum.precip.2 + sum.intensity))
 data.current$predict <- predict(data.current.lm, data.current)
 
 
 # Look at elevation vs. cumulative rainfall
 data.long <- data.current %>%
   select(Date = measure.mon, 
-         `Precip\n(raw)` = precip.merge, 
+         `Precip\n(intensity)` = sum.intensity, 
          `Precip\n(cum 5 mon)` = sum.precip.1, 
          `Precip\n(cum 4 yr)` = sum.precip.2, 
          Elevation = elevation) %>%

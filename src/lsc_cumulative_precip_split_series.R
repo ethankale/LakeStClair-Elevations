@@ -14,13 +14,17 @@ data.join <- ImportStClairData("month")
 # Use pre-determined best values to create two cumulative
 #   precipitation series, and add to the data frame
 month1 <- 5
-month2 <- 12*4
+month2 <- 12*9
 
 series1 <- rollapplyr(data.join$precip.merge, 
                      width = month1, 
                      FUN = sum, 
                      fill = NA)
-series2 <- rollapplyr(data.join$precip.merge, 
+#series2 <- rollapplyr(data.join$precip.merge, 
+#                      width = month2, 
+#                      FUN = sum, 
+#                      fill = NA)
+series2 <- rollapplyr(data.join$precip.intensity, 
                       width = month2, 
                       FUN = sum, 
                       fill = NA)
@@ -33,7 +37,7 @@ data.join$sum.precip.2 <- series2
 #   relationship between cumulative precip and elevation
 #   fundamentally changes somewhere around the 2005 mark
 
-split.center <- 200
+split.center <- 224
 
 width <- 12*7
 splits <- seq(split.center - as.integer(width/2),
@@ -105,7 +109,9 @@ ggsave(file = "./results/elevation_correlation_split_r2.png",
 # Best split value per above appears to be 197, or May of 2004.
 
 # Create regressions
-i <- 197
+best.month <- which.max(splits.df$r.squared.avg)
+i <- splits.df$month[best.month]
+
 data.lower <- data.join[1:i,]
 data.upper <- data.join[i:nrow(data.join),]
 
@@ -154,4 +160,7 @@ ggplot(data.predict.long, aes(x = date,
 ggsave(file = "./results/elevation_correlation_split_predictions.png",
        width = 7,
        height = 4)
+
+summary(data.lower.lm)
+summary(data.upper.lm)
 

@@ -7,6 +7,7 @@ library(readr)
 library(dplyr)
 library(lubridate)
 library(zoo)
+library(ggplot2)
 
 ImportStClairPrecip <- function() {
   noaa.raw <- read_csv("./data/11u_1988-2016_Day.csv",
@@ -105,7 +106,11 @@ ImportStClairData <- function(period) {
       group_by(measure.mon) %>%
       summarize(PRCP = sum(PRCP), 
                 total.precip = sum(total.precip), 
+                precip.max = max(precip.merge),
                 precip.merge = sum(precip.merge), 
+                precip.intensity = ifelse(is.na(precip.max / precip.merge),
+                                          0,
+                                          precip.max / precip.merge),
                 elevation = mean(elevation, na.rm = TRUE), 
                 max.flag = max(max.flag))
   } else if (period == "day") {
@@ -115,5 +120,26 @@ ImportStClairData <- function(period) {
   
   return(data.join)
 }
+
+data.join <- ImportStClairData("month")
+
+data.precip.long <- data.join %>%
+  select(Date = measure.mon, 
+         `Raw (NOAA)` = PRCP, 
+         `Raw (Eaton)` = total.precip, 
+         Final = precip.merge) %>%
+  gather(type, precip, -Date)
+
+ggplot(data.precip.long, aes(x = Date,
+                             y = precip)) +
+  labs(title = "Extending and Filling Precipitation",
+       x = "Date",
+       y = "Precipitation (inches per month)") +
+  geom_line() +
+  facet_grid(type ~ .)
+
+ggsave("./results/precipitation_comparison.png",
+       width = 7,
+       height = 4)
 
 

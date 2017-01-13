@@ -38,3 +38,6 @@ vignettes/*.pdf
 
 # Office/Windows temp files
 ~*
+
+# QGIS temp files
+*.qgs~
