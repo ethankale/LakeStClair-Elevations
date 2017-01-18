@@ -6,23 +6,33 @@ library(readr)
 library(dplyr)
 library(zoo)
 
-# See http://www.di.fc.ul.pt/~jpn/r/fourier/fourier.html
+# See http://www.di.fc.ul.pt/~jpn/r/fourier/fourier.html;
+#  Better yet, http://stackoverflow.com/questions/4364823/how-do-i-obtain-the-frequencies-of-each-value-in-an-fft
+
+# The index of the result of the FTT is *NOT* the same as the frequency.
+#   To get frequency, create a vector, then scale: 
+#   frequency <- c(1:length(data)-1) * (sample.frequency / length(data))
+# The value of the created vector at i is the frequency of the result of the
+#   fft() function at i; e.g., frequency[i] has strength fft(data)[i]
+
+# I'm using a default sample frequency of 12 because it works for data
+#   sampled on a monthly basis.  This will return the frequency in years.
 plot.frequency.spectrum <- function(X.k,
+                                    sample.frequency = 12,
                                     main = "Fourier Transform",
-                                    xlimits=c(0,length(X.k))) {
-  plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
+                                    xlab = "Frequency") {
   
-  # TODO: why this scaling is necessary?
-  plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2] 
+  frequency <- c(1:length(X.k)-1) * (sample.frequency / length(X.k))
+  strength <- Mod(X.k)
+  plot.data  <- data.frame(frequency, strength)
+  plot.data <- plot.data[2:(nrow(plot.data)/2), ]
   
   plot(plot.data, 
        t = "h", 
        lwd = 2, 
        main = main, 
-       xlab = "Frequency (Hz)", 
-       ylab = "Strength", 
-       xlim = xlimits, 
-       ylim = c(0,max(Mod(plot.data[,2]))))
+       xlab = xlab, 
+       ylab = "Strength")
 }
 
 
@@ -52,24 +62,16 @@ png(file = "./results/noaa_monthly.png",
     width = 800,
     height = 600,
     pointsize = 20)
-par(mfrow = c(1,1))
+par(mfrow = c(2,1))
 plot(noaa.monthly, 
      type = "l",
      main = "NOAA Monthly Total Precipitation",
      xlab = "Date",
      ylab = "Precipitation (inches)")
-dev.off()
 
-png(file = paste0("./results/noaa_fourier.png"),
-    width = 800,
-    height = 600,
-    pointsize = 20)
-par(mfrow = c(2,1))
 plot.frequency.spectrum(noaa.monthly.fft,
                         main = "NOAA Monthly Rainfall, Fourier Signal Strength",
-                        xlimits = c(0, 100))
-plot.frequency.spectrum(noaa.monthly.fft,
-                        main = "")
+                        xlab = "Frequency (cycles per year)")
 dev.off()
 
 

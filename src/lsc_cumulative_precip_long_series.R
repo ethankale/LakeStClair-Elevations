@@ -65,9 +65,9 @@ ggsave(file = "./results/elevation_correlation_single_r2.png",
        height = 4)
 
 # Recreate the regression from the best fit
-month1 <- 5
+month1 <- 6
 month2 <- 6 + 12*3
-month3 <- 12*8
+month3 <- 12*9
 
 data.current <- data.join
 series1 <- rollapplyr(data.current$precip.merge, 
@@ -88,6 +88,8 @@ data.current$sum.intensity <- series3
 data.current.lm <- with(data.current, 
 #                        lm(elevation ~ sum.precip.1 + sum.precip.2))
                         lm(elevation ~ sum.precip.1 + sum.precip.2 + sum.intensity))
+#                        lm(elevation ~ sum.precip.2 + sum.intensity))
+#                       lm(elevation ~ sum.precip.1 + sum.intensity))
 data.current$predict <- predict(data.current.lm, data.current)
 
 
@@ -95,8 +97,8 @@ data.current$predict <- predict(data.current.lm, data.current)
 data.long <- data.current %>%
   select(Date = measure.mon, 
          `Precip\n(intensity)` = sum.intensity, 
-         `Precip\n(cum 5 mon)` = sum.precip.1, 
-         `Precip\n(cum 4 yr)` = sum.precip.2, 
+         `Precip\n(6 mon)` = sum.precip.1, 
+         `Precip\n(42 mon)` = sum.precip.2, 
          Elevation = elevation) %>%
   gather(type, measure, -Date)
 
@@ -104,7 +106,7 @@ ggplot(data.long, aes(x = Date,
                       y = measure)) + 
   geom_line() +
   labs(title = "Lake St. Clair Precipitation and Elevation",
-       subtitle = paste0("Cumulative precipitation is the sum of raw precipitation"),
+       subtitle = paste0("6 month and 42 month cumulative precipitation; 9 year intensity"),
        x = "Date",
        y = "Precipitation (inches) and Elevation (feet)") +
   facet_grid(type ~ .,
@@ -137,3 +139,89 @@ ggplot(data.predict, aes(x = Date,
 ggsave(file = "./results/elevation_correlation_predict.png",
        width = 7,
        height = 4)
+
+# Look at raw vs. cumulative precipitation values
+data.precip.compare <- data.current %>%
+  filter(measure.mon > as.yearmon('2010-01', format = "%Y-%m")) %>%
+  select(Date = measure.mon,
+         Raw = precip.merge,
+         Cumulative = sum.precip.1) %>%
+  gather(type, precip, -Date)
+
+ggplot(data.precip.compare, aes(x = Date,
+                         y = precip)) +
+  geom_line() +
+  facet_grid(type ~ .) +
+  labs(title = "Precipitation, Cumulative vs. Raw",
+       subtitle = paste0("Cumulative precipitation in a ",
+                          month1,
+                          "-month moving window"),
+       x = "Date",
+       y = "Precipitation (inches)") 
+  
+ggsave(file = "./results/elevation_correlation_precip_comparison.png",
+       width = 7,
+       height = 4)
+
+# Look at raw vs. cumulative intensity values
+data.intensity.compare <- data.current %>%
+  filter(measure.mon > as.yearmon('2010-01', format = "%Y-%m")) %>%
+  select(Date = measure.mon,
+         Raw = precip.intensity,
+         Cumulative = sum.intensity) %>%
+  gather(type, intensity, -Date)
+
+ggplot(data.intensity.compare, aes(x = Date,
+                         y = intensity)) +
+  geom_line() +
+  facet_grid(type ~ .,
+             scales = "free_y") +
+  labs(title = "Precipitation Intensity, Cumulative vs. Raw",
+       subtitle = "Cumulative precipitation intensity in a 9-year moving window",
+       x = "Date",
+       y = "Intensity (no units)") 
+  
+ggsave(file = "./results/elevation_correlation_intensity_comparison.png",
+       width = 7,
+       height = 4)
+
+
+# Make a graph of cumulative rainfall at various windows, compared
+#   to lake elevation
+
+windows <- c(6, 30, 54)
+data.current <- data.join
+for (window in windows) {
+
+  series <- rollapplyr(data.current$precip.merge, 
+                        width = window, 
+                        FUN = sum, 
+                        fill = NA)
+  
+  
+  data.current[, paste0("sum.", window)] <- series
+}
+
+data.examples <- data.current %>%
+  select(measure.mon, 
+         Monthly = precip.merge, 
+         `Sum\n0.5 Year` = sum.6, 
+         `Sum\n2.5 Year` = sum.30, 
+         `Sum\n4.5 Year` = sum.54) %>%
+  gather(type, precip, -measure.mon)
+
+ggplot(data.examples, aes(x = measure.mon, 
+                          y = precip)) +
+  geom_line() +
+  facet_grid(type ~ .,
+             scales = "free_y") +
+  labs(title = "Cumulative Rainfall Over Different Periods",
+       x = "Date",
+       y = "Precipitation (inches)")
+
+ggsave(file = "./results/elevation_correlation_sums_comparison.png",
+       width = 7,
+       height = 4)
+
+
+

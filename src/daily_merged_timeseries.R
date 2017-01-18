@@ -10,7 +10,8 @@ library(zoo)
 library(ggplot2)
 
 ImportStClairPrecip <- function() {
-  noaa.raw <- read_csv("./data/11u_1988-2016_Day.csv",
+  noaa.raw <- read_csv("./data/11u_1955-2016_Day.csv",
+#  noaa.raw <- read_csv("./data/11u_1988-2016_Day.csv",
                        col_types = "cccd")
   # PEA1 is the early site id for what is now Eaton Creek - 10u
   pea1.raw <- read_csv("./data/PEA1_daily.csv",
@@ -99,7 +100,8 @@ ImportStClairData <- function(period) {
     left_join(data.elev) %>%
     mutate(measure.mon = as.yearmon(days)) %>%
     select(days, max.flag, measure.mon,
-           total.precip, PRCP, precip.merge, elevation)
+           total.precip, PRCP, precip.merge, elevation) %>%
+    filter(days >= as.Date("1977-10-01", format = "%Y-%m-%d"))
   
   if (period == "month") {
     data.join <- data.join %>%

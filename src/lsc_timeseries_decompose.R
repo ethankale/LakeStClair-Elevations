@@ -12,9 +12,9 @@ library(ggplot2)
 s.window = "periodic"
 t.window = 6 + 12*3
 
-
 source("./src/daily_merged_timeseries.R")
-data.join <- ImportStClairData(period = "month")
+data.join <- ImportStClairData(period = "month") %>%
+  filter(measure.mon >= as.yearmon("1987-10", format = "%Y-%m"))
 
 # Create time series
 # First for lake st. clair

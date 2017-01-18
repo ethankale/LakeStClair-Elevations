@@ -13,8 +13,8 @@ data.join <- ImportStClairData("month")
 
 # Combinations of long term cumulative rainfall and 
 #   intensity of rainfall
-cum.months = seq(12*3, 12*6, by = 2)
-intense.months = seq(12*7, 12*12, by = 2)
+cum.months = seq(40, 48, by = 2)
+intense.months = seq(12*4, 12*12, by = 1)
 
 combinations <- expand.grid(cumulative = cum.months,
                             intensity = intense.months)
@@ -54,6 +54,8 @@ while (i < nrow(combinations)) {
 
   data.current.lm <- with(data.current, 
                           lm(elevation ~ sum.precip.season + sum.precip + sum.intensity))
+  #                        lm(elevation ~ sum.precip.season + sum.intensity))
+  #                        lm(elevation ~ sum.precip + sum.intensity))
   
   combinations$p.cum.log[i] <- log(summary(data.current.lm)$coefficients[3+12])
   combinations$p.intense.log[i] <- log(summary(data.current.lm)$coefficients[4+12])
@@ -72,5 +74,20 @@ plot(combinations$cumulative, combinations$r.squared)
 
 best.fit <- combinations[which.max(combinations$r.squared), ]
 
+combos.filtered <- combinations[combinations$cumulative == 42, ]
+
+ggplot(combos.filtered, aes(x = intensity,
+                            y = r.squared)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Lake St. Clair Elevation and Precipitation Intensity",
+       subtitle = "Correlation between cumulative precipitation intensity and lake elevation",
+       x = "Months of cumulative intensity",
+       y = "R Squared") +
+  theme_minimal()
+
+ggsave(file = "./results/elevation_correlation_intensity_r2.png",
+       width = 7,
+       height = 4)
 
 
