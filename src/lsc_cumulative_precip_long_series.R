@@ -96,10 +96,10 @@ data.current$predict <- predict(data.current.lm, data.current)
 # Look at elevation vs. cumulative rainfall
 data.long <- data.current %>%
   select(Date = measure.mon, 
-         `Precip\n(intensity)` = sum.intensity, 
-         `Precip\n(6 mon)` = sum.precip.1, 
-         `Precip\n(42 mon)` = sum.precip.2, 
-         Elevation = elevation) %>%
+         `D: Precipitation Intensity` = sum.intensity, 
+         `B: Cumulative Precipitation (6 month)` = sum.precip.1, 
+         `C: Cumulative Precipitation (42 month)` = sum.precip.2, 
+         `A: Elevation` = elevation) %>%
   gather(type, measure, -Date)
 
 ggplot(data.long, aes(x = Date,
@@ -109,8 +109,10 @@ ggplot(data.long, aes(x = Date,
        subtitle = paste0("6 month and 42 month cumulative precipitation; 9 year intensity"),
        x = "Date",
        y = "Precipitation (inches) and Elevation (feet)") +
-  facet_grid(type ~ .,
-             scales = "free_y")
+  facet_wrap( ~ type,
+             ncol = 1,
+             scales = "free_y") +
+  theme_minimal()
 
 ggsave(file = "./results/elevation_correlation_best_fit.png",
        width = 7,
@@ -151,13 +153,15 @@ data.precip.compare <- data.current %>%
 ggplot(data.precip.compare, aes(x = Date,
                          y = precip)) +
   geom_line() +
-  facet_grid(type ~ .) +
+  facet_wrap( ~ type,
+              ncol = 1) +
   labs(title = "Precipitation, Cumulative vs. Raw",
        subtitle = paste0("Cumulative precipitation in a ",
                           month1,
                           "-month moving window"),
        x = "Date",
-       y = "Precipitation (inches)") 
+       y = "Precipitation (inches)") +
+  theme_minimal()
   
 ggsave(file = "./results/elevation_correlation_precip_comparison.png",
        width = 7,
@@ -174,12 +178,14 @@ data.intensity.compare <- data.current %>%
 ggplot(data.intensity.compare, aes(x = Date,
                          y = intensity)) +
   geom_line() +
-  facet_grid(type ~ .,
+  facet_wrap( ~ type,
+             ncol = 1,
              scales = "free_y") +
   labs(title = "Precipitation Intensity, Cumulative vs. Raw",
        subtitle = "Cumulative precipitation intensity in a 9-year moving window",
        x = "Date",
-       y = "Intensity (no units)") 
+       y = "Intensity") +
+  theme_minimal()
   
 ggsave(file = "./results/elevation_correlation_intensity_comparison.png",
        width = 7,

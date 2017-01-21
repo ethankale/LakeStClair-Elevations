@@ -8,6 +8,8 @@ library(lubridate)
 library(zoo)
 library(stlplus)
 library(ggplot2)
+library(tidyr)
+library(dplyr)
 
 s.window = "periodic"
 t.window = 6 + 12*3
@@ -56,15 +58,29 @@ intensity.ts.trend <- tibble(measure.mon = as.yearmon(intensity.ts.stl$time),
 data.ts.seasonal <- data.frame(date = data.ts.stl$time,
   elev.s = data.ts.stl$data$seasonal)
 
-png("./results/decompose_lsc.png",
-    width = 700,
-    height = 400,
-    pointsize = 20)
-plot(data.ts.stl,
-     main = paste0("Lake St. Clair Elevation"),
-     ylab = "Elevations (monthly mean)",
-     xlab = "Year")
-dev.off()
+data.decompose.long <- data.ts.stl$data %>%
+  select(`A: Raw` = raw, 
+         `B: Seasonal` = seasonal, 
+         `C: Trend (42 month weighted average)` = trend, 
+         `D: Remainder` = remainder) %>%
+  mutate(month = data.join$measure.mon) %>%
+  gather(part, value, -month)
+
+ggplot(data.decompose.long, aes(x = month,
+                                y = value)) +
+  geom_line() +
+  facet_wrap( ~ part,
+             ncol = 1,
+             scales = "free_y") +
+  labs(title = "Lake St. Clair Elevation",
+       subtitle = "Raw = Seasonal + Trend + Remainder",
+       x = "Date",
+       y = "Elevation (feet)") +
+  theme_minimal()
+
+ggsave(file = "./results/decompose_lsc.png",
+       width = 7,
+       height = 4)
 
 png("./results/decompose_lsc_trend.png",
     width = 700,
@@ -75,6 +91,33 @@ plot(data.ts.stl$time, data.ts.stl$data$trend,
      main = "Lake St. Clair TS Decomposition Trend")
 dev.off()
 
+# Graph the precipitation data.
+
+eaton.decompose.long <- eaton.ts.stl$data %>%
+  select(`A: Raw` = raw, 
+         `B: Seasonal` = seasonal, 
+         `C: Trend` = trend, 
+         `D: Remainder` = remainder) %>%
+  mutate(month = data.join$measure.mon) %>%
+  gather(part, value, -month)
+
+ggplot(eaton.decompose.long, aes(x = month,
+                                y = value)) +
+  geom_line() +
+  facet_wrap( ~ part,
+             ncol = 1,
+             scales = "free_y") +
+  labs(title = "Eaton Station Precipitation",
+       subtitle = "Raw = Seasonal + Trend + Remainder",
+       x = "Date",
+       y = "Precipitation (inches)") +
+  theme_minimal()
+
+ggsave(file = "./results/decompose_eaton.png",
+       width = 7,
+       height = 4)
+
+
 # Graph the precip data.
 png("./results/decompose_eaton_trend.png",
     width = 700,
@@ -83,16 +126,6 @@ png("./results/decompose_eaton_trend.png",
 plot(eaton.ts.stl$time, eaton.ts.stl$data$trend,
      type = "l",
      main = "Eaton TS Decomposition Trend")
-dev.off()
-
-png("./results/decompose_eaton.png",
-    width = 700,
-    height = 400,
-    pointsize = 20)
-plot(eaton.ts.stl,
-     main = "Eaton (Extended) Rainfall",
-     ylab = "Precipitation (inches per month)",
-     xlab = "Year")
 dev.off()
 
 # Graph the precip intensity data.
