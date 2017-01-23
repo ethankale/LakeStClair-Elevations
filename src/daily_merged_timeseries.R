@@ -5,6 +5,7 @@
 
 library(readr)
 library(dplyr)
+library(tidyr)
 library(lubridate)
 library(zoo)
 library(ggplot2)
@@ -127,18 +128,25 @@ data.join <- ImportStClairData("month")
 
 data.precip.long <- data.join %>%
   select(Date = measure.mon, 
-         `Raw (NOAA)` = PRCP, 
-         `Raw (Eaton)` = total.precip, 
-         Final = precip.merge) %>%
-  gather(type, precip, -Date)
+         `C: Raw (NOAA)` = PRCP, 
+         `B: Raw (Eaton)` = total.precip, 
+         `A: Final` = precip.merge) %>%
+  mutate(eaton.missing = is.na(`B: Raw (Eaton)`)) %>%
+  gather(type, precip, -Date, -eaton.missing) %>%
+  mutate(group = 1)
 
 ggplot(data.precip.long, aes(x = Date,
                              y = precip)) +
   labs(title = "Extending and Filling Precipitation",
        x = "Date",
        y = "Precipitation (inches per month)") +
-  geom_line() +
-  facet_grid(type ~ .)
+  geom_line(aes(color = eaton.missing,
+                group = group)) +
+  facet_wrap( ~ type,
+              ncol = 1) +
+  scale_color_manual(values = c("black", "red"),
+                                guide = FALSE) +
+  theme_minimal()
 
 ggsave("./results/precipitation_comparison.png",
        width = 7,

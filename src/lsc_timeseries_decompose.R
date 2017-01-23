@@ -159,11 +159,14 @@ trends.df <- tibble(thedate = data.ts.stl$time,
 ggplot(trends.df, aes(x = thedate,
                       y = value)) +
   geom_line() +
-  facet_grid(type ~ .,
+  facet_wrap( ~ type,
+             ncol = 1,
              scales = "free_y") +
   labs(title = "Long-term Trends",
+       subtitle = paste0(t.window, " Month Weighted Average"),
        x = "Date",
-       y = "Elevation (feet) and Precipitation (inches)")
+       y = "Elevation (feet) and Precipitation (inches)") +
+  theme_minimal()
 
 ggsave("./results/decompose_trend_comparison.png",
        width = 7,
