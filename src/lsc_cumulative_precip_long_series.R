@@ -191,6 +191,16 @@ ggsave(file = "./results/elevation_correlation_intensity_comparison.png",
        width = 7,
        height = 4)
 
+# Export precipitation data, raw & cumulative
+data.export <- data.current %>%
+  select(month = measure.mon,
+         precip.in = precip.merge,
+         precip.in.sum.6 = sum.precip.1,
+         precip.in.sum.42 = sum.precip.2)
+
+write_csv(data.export,
+          "./results/eaton_precip_monthly_filled.csv")
+
 
 # Make a graph of cumulative rainfall at various windows, compared
 #   to lake elevation
@@ -228,6 +238,5 @@ ggplot(data.examples, aes(x = measure.mon,
 ggsave(file = "./results/elevation_correlation_sums_comparison.png",
        width = 7,
        height = 4)
-
 
 
